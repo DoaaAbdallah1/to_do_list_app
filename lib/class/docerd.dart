@@ -72,6 +72,7 @@ class Cerd extends StatelessWidget {
                 children: [
                   IconButton(
                       onPressed: () {
+                        myControllerTitle.text=myTask;
                         showDialog(
                             context: context,
                             builder: (BuildContext) {

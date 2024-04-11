@@ -68,6 +68,7 @@ class _ToDoListState extends State<ToDoList> {
     }
     return c;
   }
+
 // remove task
   removeIndex(int index) {
     setState(() {
@@ -75,7 +76,6 @@ class _ToDoListState extends State<ToDoList> {
     });
   }
 
-  
   void runFilter(String keyword) {
     List results = [];
     if (keyword.isEmpty) {
@@ -112,7 +112,6 @@ class _ToDoListState extends State<ToDoList> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -127,9 +126,9 @@ class _ToDoListState extends State<ToDoList> {
           ),
           elevation: 0,
         ),
-        
         floatingActionButton: FloatingActionButton(
           onPressed: () {
+            myController.text = "";
             showDialog(
                 context: context,
                 builder: (BuildContext) {
