@@ -1,12 +1,19 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
-import 'package:flutter/cupertino.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_database/ui/firebase_animated_list.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:to_do_list_app/class/counter.dart';
 import 'package:to_do_list_app/class/docerd.dart';
+import 'package:to_do_list_app/firebase_options.dart';
+import 'package:to_do_list_app/login.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -18,7 +25,23 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData.light(useMaterial3: true),
-      home: ToDoList(),
+      home: StreamBuilder(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+                child: CircularProgressIndicator(
+              color: Colors.white,
+            ));
+          } else if (snapshot.hasError) {
+            return Text("");
+          } else if (snapshot.hasData) {
+            return ToDoList();
+          } else {
+            return Login();
+          }
+        },
+      ),
     );
   }
 }
@@ -40,13 +63,10 @@ class Task {
 }
 
 class _ToDoListState extends State<ToDoList> {
-  List myList = [
-    Task(title: "Publish video", status: true),
-    Task(title: "Laugh louder", status: true),
-    Task(title: "GEM", status: true),
-    Task(title: "call mom", status: true),
-  ];
+  List myList = [];
   List foundToDo = [];
+  DatabaseReference ref = FirebaseDatabase.instance.ref("tasks");
+
   final searchboxController = TextEditingController();
   final myController = TextEditingController();
   final myControllerTitle = TextEditingController();
@@ -70,10 +90,14 @@ class _ToDoListState extends State<ToDoList> {
   }
 
 // remove task
-  removeIndex(int index) {
-    setState(() {
-      foundToDo.remove(foundToDo[index]);
-    });
+  removeIndex(int index) async {
+    
+      //foundToDo.remove(foundToDo[index]);
+      await ref
+          .child(FirebaseAuth.instance.currentUser!.uid)
+          .child("$index")
+          .remove();
+    
   }
 
   void runFilter(String keyword) {
@@ -91,31 +115,72 @@ class _ToDoListState extends State<ToDoList> {
     });
   }
 
+  User? user;
+  DatabaseReference? taskRef;
   void initState() {
     foundToDo = myList;
+
+    user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      taskRef = FirebaseDatabase.instance.ref('tasks').child(user!.uid);
+    }
     super.initState();
   }
 
-  funAddTask() {
-    foundToDo.add(Task(title: addTask, status: false));
+  int i = 0;
+  funAddTask() async {
+    //foundToDo.add(Task(title: addTask, status: false));
+    //  var uuid = Uuid();
+
+    await ref
+        .child(FirebaseAuth.instance.currentUser!.uid)
+        .child("$i")
+        .set({'title': addTask, 'status': false,'id':i});
+
+    i++;
   }
 
-  changeTitle(int index) {
-    setState(() {
-      foundToDo[index].title = myControllerTitle.text;
-    });
+  changeTitle(int index) async {
+    //foundToDo[index].title = myControllerTitle.text;
+    await ref
+        .child(FirebaseAuth.instance.currentUser!.uid)
+        .child("$index")
+        .update({'title': myControllerTitle.text});
   }
 
-  changeStatus(int index) {
-    setState(() {
-      foundToDo[index].status = !foundToDo[index].status;
-    });
+  changeStatus(int index) async {
+    //  foundToDo[index].status = !foundToDo[index].status;
+    await ref
+        .child(FirebaseAuth.instance.currentUser!.uid)
+        .child("$index")
+        .update({'status': false});
   }
 
   @override
   Widget build(BuildContext context) {
+    //DatabaseReference ref = FirebaseDatabase.instance.ref("tasks");
+    // Object? test = "";
+    // ref.child(FirebaseAuth.instance.currentUser!.uid).onValue.listen((event) {
+    //   var data = event.snapshot.value;
+    //     test = data;
+    // });
+
+    //print(test);
+
     return Scaffold(
         appBar: AppBar(
+          actions: [
+            IconButton(
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Login(),
+                      ));
+                },
+                icon: Icon(Icons.delete_outline))
+          ],
           backgroundColor: Color.fromARGB(254, 223, 189, 67),
           title: Text(
             "To-Do List",
@@ -129,6 +194,7 @@ class _ToDoListState extends State<ToDoList> {
         floatingActionButton: FloatingActionButton(
           onPressed: () {
             myController.text = "";
+            //  print(test);
             showDialog(
                 context: context,
                 builder: (BuildContext) {
@@ -164,6 +230,7 @@ class _ToDoListState extends State<ToDoList> {
                     ),
                   );
                 });
+            //  print(test);
           },
           backgroundColor: Color.fromARGB(254, 223, 189, 67),
           shape:
@@ -235,27 +302,30 @@ class _ToDoListState extends State<ToDoList> {
                   //   funtionCounter: functionCounter(),
                   // ),
                   // items
-                  Container(
-                    height: 530,
-                    child: ListView.builder(
-                        itemCount: foundToDo.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          return Column(
-                            children: [
-                              Cerd(
-                                myTask: foundToDo[index].title,
-                                doneOrNot: foundToDo[index].status,
-                                fun: changeStatus,
-                                fun2: fun,
-                                index: index,
-                                myControllerTitle: myControllerTitle,
-                                changeTitle: changeTitle,
-                                removeIndex: removeIndex,
-                              )
-                            ],
-                          );
-                        }),
-                  )
+                  SizedBox(
+                      height: 530,
+                      child: Expanded(
+                          child: FirebaseAnimatedList(
+                              query: ref.child(
+                                  FirebaseAuth.instance.currentUser!.uid),
+                              itemBuilder:
+                                  (context, snapshot, index, animation) {
+                                    Object? indexPoint=snapshot.child("id").value;
+                                return Cerd(
+                                  myTask:
+                                      snapshot.child("title").value.toString(),
+                                  doneOrNot: true,
+                                  fun: changeStatus,
+                                  fun2: fun,
+                                  index:0,
+                                  myControllerTitle: myControllerTitle,
+                                  changeTitle: changeTitle,
+                                  removeIndex: removeIndex,
+                                );
+                              }))
+
+                      ///end
+                      )
                 ],
               ),
             ),
