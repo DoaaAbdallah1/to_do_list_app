@@ -8,6 +8,7 @@ import 'package:to_do_list_app/class/docerd.dart';
 import 'package:to_do_list_app/firebase_options.dart';
 import 'package:to_do_list_app/login.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:uuid/uuid.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -70,14 +71,6 @@ class _ToDoListState extends State<ToDoList> {
   final searchboxController = TextEditingController();
   final myController = TextEditingController();
   final myControllerTitle = TextEditingController();
-  String addTask = "";
-  String changeTask = "";
-  fun() {
-    setState(() {
-      addTask = myController.text;
-      changeTask = myControllerTitle.text;
-    });
-  }
 
   int functionCounter() {
     int c = 0;
@@ -90,14 +83,12 @@ class _ToDoListState extends State<ToDoList> {
   }
 
 // remove task
-  removeIndex(int index) async {
-    
-      //foundToDo.remove(foundToDo[index]);
-      await ref
-          .child(FirebaseAuth.instance.currentUser!.uid)
-          .child("$index")
-          .remove();
-    
+  removeIndex(String index) async {
+    //foundToDo.remove(foundToDo[index]);
+    await ref
+        .child(FirebaseAuth.instance.currentUser!.uid)
+        .child(index)
+        .remove();
   }
 
   void runFilter(String keyword) {
@@ -127,40 +118,52 @@ class _ToDoListState extends State<ToDoList> {
     super.initState();
   }
 
-  int i = 0;
+  var uuid = Uuid();
   funAddTask() async {
     //foundToDo.add(Task(title: addTask, status: false));
-    //  var uuid = Uuid();
-
     await ref
         .child(FirebaseAuth.instance.currentUser!.uid)
-        .child("$i")
-        .set({'title': addTask, 'status': false,'id':i});
-
-    i++;
+        .child(uuid.v1())
+        .set({'title': myController.text, 'status': false});
   }
 
-  changeTitle(int index) async {
+  changeTitle(String index) async {
     //foundToDo[index].title = myControllerTitle.text;
     await ref
         .child(FirebaseAuth.instance.currentUser!.uid)
-        .child("$index")
+        .child(index)
         .update({'title': myControllerTitle.text});
   }
 
-  changeStatus(int index) async {
+  changeStatus(String index) async {
     //  foundToDo[index].status = !foundToDo[index].status;
+
+    final snapshot = await ref
+        .child(FirebaseAuth.instance.currentUser!.uid)
+        .child(index)
+        .get();
+
+    print(snapshot.child('status').value);
+    bool found = false;
+    if (snapshot.child('status').value ==
+        false) {
+      found = true;
+    } else {
+      found = false;
+    }
     await ref
         .child(FirebaseAuth.instance.currentUser!.uid)
-        .child("$index")
-        .update({'status': false});
+        .child(index)
+        .update({'status': found});
   }
 
   @override
   Widget build(BuildContext context) {
     //DatabaseReference ref = FirebaseDatabase.instance.ref("tasks");
     // Object? test = "";
-    // ref.child(FirebaseAuth.instance.currentUser!.uid).onValue.listen((event) {
+    // ref.child(FirebaseAuth.instance.currentUser!.uid).onValue.list
+    //
+    //en((event) {
     //   var data = event.snapshot.value;
     //     test = data;
     // });
@@ -215,9 +218,8 @@ class _ToDoListState extends State<ToDoList> {
                             ),
                           ),
                           FilledButton(
-                              onPressed: () {
-                                fun();
-                                funAddTask();
+                              onPressed: () async {
+                                await funAddTask();
                                 Navigator.pop(context);
                               },
                               child: Text(
@@ -308,16 +310,24 @@ class _ToDoListState extends State<ToDoList> {
                           child: FirebaseAnimatedList(
                               query: ref.child(
                                   FirebaseAuth.instance.currentUser!.uid),
-                              itemBuilder:
-                                  (context, snapshot, index, animation) {
-                                    Object? indexPoint=snapshot.child("id").value;
+                              itemBuilder: (BuildContext context,
+                                  DataSnapshot snapshot,
+                                  Animation<double> animation,
+                                  int index) {
+                                //Object? indexPoint=snapshot.child("id").value;
+                                print("${snapshot.key} ");
                                 return Cerd(
                                   myTask:
                                       snapshot.child("title").value.toString(),
-                                  doneOrNot: true,
+                                  doneOrNot: snapshot
+                                              .child("status")
+                                              .value
+                                              .toString() ==
+                                          'true'
+                                      ? true
+                                      : false,
                                   fun: changeStatus,
-                                  fun2: fun,
-                                  index:0,
+                                  index: snapshot.key.toString(),
                                   myControllerTitle: myControllerTitle,
                                   changeTitle: changeTitle,
                                   removeIndex: removeIndex,

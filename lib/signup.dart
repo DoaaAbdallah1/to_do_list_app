@@ -64,10 +64,13 @@ class _SignUpState extends State<SignUp> {
                           FirebaseDatabase.instance.ref("users");
 
                       await ref.child(credential.user!.uid).set({
-                          'email': emailController.text,
+                        'email': emailController.text,
                         'password': passwordController.text
-                
                       });
+                      FirebaseDatabase.instance
+                          .ref('counter')
+                          .child(FirebaseAuth.instance.currentUser!.uid)
+                          .set({"index": 0});
 
                       users.doc(credential.user!.uid).set({
                         'email': emailController.text,

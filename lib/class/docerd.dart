@@ -1,25 +1,27 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 class Cerd extends StatelessWidget {
   Cerd(
       {super.key,
       required this.myTask,
       required this.fun,
-      required this.fun2,
       required this.index,
       required this.doneOrNot,
       required this.myControllerTitle,
       required this.changeTitle,
       required this.removeIndex});
   final String myTask;
-  final bool doneOrNot;
-  final int index;
+  bool doneOrNot;
+  final String index;
   final Function removeIndex;
   final Function fun;
-  final Function fun2;
+
   final myControllerTitle;
   final Function changeTitle;
 
@@ -27,7 +29,10 @@ class Cerd extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        fun(index);
+        //DatabaseReference ref = FirebaseDatabase.instance.ref("task");
+
+      //  fun(index);
+        
       },
       child: Container(
         margin: EdgeInsets.only(top: 12),
@@ -40,18 +45,26 @@ class Cerd extends StatelessWidget {
           children: [
             Row(
               children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: doneOrNot
-                        ? Color.fromARGB(254, 223, 189, 67)
-                        : Colors.white,
-                    border:
-                        Border.all(color: Color.fromARGB(254, 223, 189, 67)),
-                  ),
-                  child: Icon(
-                    doneOrNot ? Icons.check : Icons.close,
-                    color: Colors.white,
-                    size: 21,
+                GestureDetector(
+                  onTap: () {
+                    
+
+                    fun(index);
+                  
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: doneOrNot
+                          ? Color.fromARGB(254, 223, 189, 67)
+                          : Colors.white,
+                      border:
+                          Border.all(color: Color.fromARGB(254, 223, 189, 67)),
+                    ),
+                    child: Icon(
+                      doneOrNot ? Icons.check : Icons.close,
+                      color: Colors.white,
+                      size: 21,
+                    ),
                   ),
                 ),
                 SizedBox(
@@ -72,7 +85,7 @@ class Cerd extends StatelessWidget {
                 children: [
                   IconButton(
                       onPressed: () {
-                        myControllerTitle.text=myTask;
+                        myControllerTitle.text = myTask;
                         showDialog(
                             context: context,
                             builder: (BuildContext) {
@@ -95,7 +108,7 @@ class Cerd extends StatelessWidget {
                                       ),
                                       FilledButton(
                                           onPressed: () {
-                                            fun2();
+                                            //  fun2();
                                             changeTitle(index);
 
                                             Navigator.pop(context);
